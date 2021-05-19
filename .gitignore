@@ -1,0 +1,5 @@
+*.exe
+*.rar
+.idea
+bin
+vendor
