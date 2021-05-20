@@ -10,5 +10,5 @@ services:
       - 80:80
       - 9090:9090
     environment:
-      - LOGIN_HTTP_PORT=80
-      - LOGIN_GRPC_PORT=9090
+      - APP_HTTP_PORT=80
+      - APP_GRPC_PORT=9090

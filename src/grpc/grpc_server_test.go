@@ -11,7 +11,7 @@ import (
 func TestGrpcServer_GetName(t *testing.T) {
 	type fields struct {
 		DB                 *sql.DB
-		LoginServiceServer example_proto_messages.ExampleServiceServer
+		exampleServiceServer example_proto_messages.ExampleServiceServer
 		ServerInterface    network.ServerInterface
 	}
 	tests := []struct {
@@ -27,7 +27,7 @@ func TestGrpcServer_GetName(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			ls := &GrpcServer{
 				DB:                 tt.fields.DB,
-				ExampleServiceServer: tt.fields.LoginServiceServer,
+				ExampleServiceServer: tt.fields.exampleServiceServer,
 				ServerInterface:    tt.fields.ServerInterface,
 			}
 			assert.Equal(t, tt.want, ls.GetName())

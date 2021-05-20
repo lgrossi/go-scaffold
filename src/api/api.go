@@ -46,7 +46,7 @@ func Initialize(gConfigs configs.GlobalConfigs) *Api {
 
 	/* Generate HTTP/GRPC reverse proxy */
 
-	_api.GrpcConnection, err = grpc.Dial(gConfigs.LoginServerConfigs.Grpc.Format(), grpc.WithInsecure())
+	_api.GrpcConnection, err = grpc.Dial(gConfigs.ServerConfigs.Grpc.Format(), grpc.WithInsecure())
 	if err != nil {
 		logger.Error(errors.New("Couldn't start GRPC reverse proxy."))
 	}
@@ -55,7 +55,7 @@ func Initialize(gConfigs configs.GlobalConfigs) *Api {
 }
 
 func (_api *Api) Run(gConfigs configs.GlobalConfigs) error {
-	err := http.ListenAndServe(gConfigs.LoginServerConfigs.Http.Format(), _api.Router)
+	err := http.ListenAndServe(gConfigs.ServerConfigs.Http.Format(), _api.Router)
 
 	/* Make sure we free the reverse proxy connection */
 	if _api.GrpcConnection != nil {

@@ -7,7 +7,6 @@ require (
 	github.com/gin-gonic/gin v1.7.1
 	github.com/go-sql-driver/mysql v1.6.0
 	github.com/joho/godotenv v1.3.0
-	github.com/opentibiabr/login-server v1.1.1
 	github.com/sirupsen/logrus v1.8.1
 	github.com/stretchr/testify v1.7.0
 	golang.org/x/time v0.0.0-20210220033141-f8bda1e9f3ba

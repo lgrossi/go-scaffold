@@ -25,7 +25,7 @@ Describr your project **HERE**
 ### Getting **Started**
 
 To run it, simply download the latest release and define your environment variables.
-You can set environment type as `dev` if you want to use a `.env` file (store it in the same folder of the login server).
+You can set environment type as `dev` if you want to use a `.env` file (store it in the same folder of your app).
 
 You can also download our docker image and apply the environment variables to your container.
 
@@ -39,15 +39,11 @@ You can also download our docker image and apply the environment variables to yo
 |`MYSQL_PASS`         | `database password`                  |
 |`MYSQL_USER`         | `database username`                  |
 |`ENV_LOG_LEVEL`      | `logrus log level for verbose` [ref](https://pkg.go.dev/github.com/sirupsen/logrus#Level)   |
-|`LOGIN_IP`           | `login ip address`                   |
-|`LOGIN_HTTP_PORT`    | `login http port`                    |
-|`LOGIN_GRPC_PORT`    | `login grpc port`                    |
+|`APP_IP`             | `app ip address`                     |
+|`APP_HTTP_PORT`      | `app http port`                      |
+|`APP_GRPC_PORT`      | `app grpc port`                      |
 |`RATE_LIMITER_BURST` | `rate limiter same request burst`    |
 |`RATE_LIMITER_RATE`  | `rate limit request per sec per user`|
-|`SERVER_IP`          | `game server IP address`             |
-|`SERVER_LOCATION`    | `game server location`               |
-|`SERVER_NAME`        | `game server name`                   |
-|`SERVER_PORT`        | `game server game port`              |
 
 **Tests**  
 `go test ./tests -v`

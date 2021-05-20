@@ -12,9 +12,8 @@ type Config interface {
 }
 
 type GlobalConfigs struct {
-	DBConfigs          DBConfigs
-	GameServerConfigs  GameServerConfigs
-	LoginServerConfigs LoginServerConfigs
+	DBConfigs     DBConfigs
+	ServerConfigs ServerConfigs
 }
 
 // Init only works for variables that are not yet defined. /*
@@ -24,15 +23,13 @@ func Init() error {
 
 func (c *GlobalConfigs) Display() {
 	logger.Info(c.DBConfigs.format())
-	logger.Info(c.GameServerConfigs.Format())
-	logger.Info(c.LoginServerConfigs.Format())
+	logger.Info(c.ServerConfigs.Format())
 }
 
 func GetGlobalConfigs() GlobalConfigs {
 	return GlobalConfigs{
-		DBConfigs:          GetDBConfigs(),
-		GameServerConfigs:  GetGameServerConfigs(),
-		LoginServerConfigs: GetLoginServerConfigs(),
+		DBConfigs:     GetDBConfigs(),
+		ServerConfigs: GetServerConfigs(),
 	}
 }
 

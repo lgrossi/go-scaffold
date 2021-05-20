@@ -16,19 +16,15 @@ const defaultNumber = 8080
 func setGameConfigs() {
 	setEnvKeys(
 		[]string{
-			EnvLoginIpKey,
-			EnvServerIpKey,
-			EnvServerNameKey,
-			EnvServerLocationKey,
+			EnvAppIpKey,
 			EnvDBHostKey,
 			EnvDBNameKey,
 			EnvDBUserKey,
 			EnvDBPassKey,
 		},
 		[]string{
-			EnvServerPortKey,
-			EnvLoginHttpPortKey,
-			EnvLoginGrpcPortKey,
+			EnvHttpPortKey,
+			EnvGrpcPortKey,
 			EnvRateLimiterBurstKey,
 			EnvRateLimiterRateKey,
 			EnvDBPortKey,
@@ -39,17 +35,13 @@ func setGameConfigs() {
 func unsetGameConfigs() {
 	unsetEnvKeys(
 		[]string{
-			EnvLoginIpKey,
-			EnvServerIpKey,
-			EnvServerNameKey,
-			EnvServerLocationKey,
+			EnvAppIpKey,
 			EnvDBHostKey,
 			EnvDBNameKey,
 			EnvDBUserKey,
 			EnvDBPassKey,
-			EnvServerPortKey,
-			EnvLoginHttpPortKey,
-			EnvLoginGrpcPortKey,
+			EnvHttpPortKey,
+			EnvGrpcPortKey,
 			EnvRateLimiterBurstKey,
 			EnvRateLimiterRateKey,
 			EnvDBPortKey,
@@ -179,12 +171,12 @@ func TestGetGlobalConfigs(t *testing.T) {
 	}{{
 		name: "default global configs",
 		want: GlobalConfigs{
-			LoginServerConfigs: LoginServerConfigs{
-				Http: HttpLoginConfigs{
+			ServerConfigs: ServerConfigs{
+				Http: HttpConfigs{
 					Ip:   "",
 					Port: 80,
 				},
-				Grpc: GrpcLoginConfigs{
+				Grpc: GrpcConfigs{
 					Ip:   "",
 					Port: 9090,
 				},
@@ -192,12 +184,6 @@ func TestGetGlobalConfigs(t *testing.T) {
 					Burst: 5,
 					Rate:  rate.Limit(2),
 				},
-			},
-			GameServerConfigs: GameServerConfigs{
-				IP:       "127.0.0.1",
-				Name:     "Canary",
-				Port:     7172,
-				Location: "BRA",
 			},
 			DBConfigs: DBConfigs{
 				Host: "127.0.0.1",
@@ -210,12 +196,12 @@ func TestGetGlobalConfigs(t *testing.T) {
 	}, {
 		name: "default global configs",
 		want: GlobalConfigs{
-			LoginServerConfigs: LoginServerConfigs{
-				Http: HttpLoginConfigs{
+			ServerConfigs: ServerConfigs{
+				Http: HttpConfigs{
 					Ip:   defaultString,
 					Port: defaultNumber,
 				},
-				Grpc: GrpcLoginConfigs{
+				Grpc: GrpcConfigs{
 					Ip:   defaultString,
 					Port: defaultNumber,
 				},
@@ -223,12 +209,6 @@ func TestGetGlobalConfigs(t *testing.T) {
 					Burst: defaultNumber,
 					Rate:  rate.Limit(defaultNumber),
 				},
-			},
-			GameServerConfigs: GameServerConfigs{
-				IP:       defaultString,
-				Name:     defaultString,
-				Port:     8080,
-				Location: defaultString,
 			},
 			DBConfigs: DBConfigs{
 				Host: defaultString,
