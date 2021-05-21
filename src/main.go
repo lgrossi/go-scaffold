@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"github.com/lgrossi/go-scaffold/src/api"
 	"github.com/lgrossi/go-scaffold/src/configs"
 	grpc_application "github.com/lgrossi/go-scaffold/src/grpc"
@@ -29,8 +28,8 @@ func main() {
 
 	gConfigs := configs.GetGlobalConfigs()
 
-	go startServer(&wg, gConfigs, grpc_application.Initialize(gConfigs))
-	go startServer(&wg, gConfigs, api.Initialize(gConfigs))
+	go network.StartServer(&wg, gConfigs, &grpc_application.GrpcServer{})
+	go network.StartServer(&wg, gConfigs, &api.Api{})
 
 	time.Sleep(time.Duration(initDelay) * time.Millisecond)
 	gConfigs.Display()
@@ -38,15 +37,4 @@ func main() {
 	// wait until WaitGroup is done
 	wg.Wait()
 	logger.Info("Good bye...")
-}
-
-func startServer(
-	wg *sync.WaitGroup,
-	gConfigs configs.GlobalConfigs,
-	server network.ServerInterface,
-) {
-	logger.Info(fmt.Sprintf("Starting %s server...", server.GetName()))
-	logger.Error(server.Run(gConfigs))
-	wg.Done()
-	logger.Warn(fmt.Sprintf("Server %s is gone...", server.GetName()))
 }

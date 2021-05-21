@@ -16,12 +16,9 @@ type GrpcServer struct {
 	network.ServerInterface
 }
 
-func Initialize(gConfigs configs.GlobalConfigs) *GrpcServer {
-	var ls GrpcServer
-
+func (ls *GrpcServer) Initialize(gConfigs configs.GlobalConfigs) error {
 	ls.DB = database.PullConnection(gConfigs)
-
-	return &ls
+	return nil
 }
 
 func (ls *GrpcServer) Run(gConfigs configs.GlobalConfigs) error {

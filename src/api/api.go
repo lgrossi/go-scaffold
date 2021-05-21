@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/lgrossi/go-scaffold/src/api/limiter"
+	"github.com/lgrossi/go-scaffold/src/api/middlewares"
 	"github.com/lgrossi/go-scaffold/src/configs"
 	"github.com/lgrossi/go-scaffold/src/database"
 	"github.com/lgrossi/go-scaffold/src/logger"
@@ -22,10 +23,7 @@ type Api struct {
 	network.ServerInterface
 }
 
-func Initialize(gConfigs configs.GlobalConfigs) *Api {
-	var _api Api
-	var err error
-
+func (_api *Api) Initialize(gConfigs configs.GlobalConfigs) error {
 	_api.DB = database.PullConnection(gConfigs)
 
 	ipLimiter := &limiter.IPRateLimiter{
@@ -44,14 +42,15 @@ func Initialize(gConfigs configs.GlobalConfigs) *Api {
 
 	_api.initializeRoutes()
 
+	var err error
 	/* Generate HTTP/GRPC reverse proxy */
-
 	_api.GrpcConnection, err = grpc.Dial(gConfigs.ServerConfigs.Grpc.Format(), grpc.WithInsecure())
 	if err != nil {
 		logger.Error(errors.New("Couldn't start GRPC reverse proxy."))
+		return err
 	}
 
-	return &_api
+	return nil
 }
 
 func (_api *Api) Run(gConfigs configs.GlobalConfigs) error {
@@ -73,5 +72,13 @@ func (_api *Api) GetName() string {
 }
 
 func (_api *Api) initializeRoutes() {
-	_api.Router.POST("/example", _api.example)
+	_api.Router.POST("/login", _api.login)
+
+	authorized := _api.Router.Group("/")
+	authorized.Use(middlewares.VerifyToken(_api.DB))
+	{
+		authorized.POST("/protected", _api.protectedExample)
+		authorized.POST("/logout", _api.logout)
+		authorized.POST("/grpc", _api.grpcExample)
+	}
 }
