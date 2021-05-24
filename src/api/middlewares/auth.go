@@ -12,11 +12,11 @@ import (
 	"time"
 )
 
-const TokenString = "MY_CUSTOM_SIGNED_STRING"
-
-// AccessTokenExpiration /*
-const AccessTokenExpiration = 15 * 60
-const RefreshTokenExpiration = 7 * 24 * 60 * 60
+const (
+	TokenString            = "MY_CUSTOM_SIGNED_STRING"
+	AccessTokenExpiration  = 15 * 60
+	RefreshTokenExpiration = 7 * 24 * 60 * 60
+)
 
 type TokenSession struct {
 	Email        string

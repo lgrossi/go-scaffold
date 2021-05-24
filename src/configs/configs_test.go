@@ -9,9 +9,11 @@ import (
 	"testing"
 )
 
-const defaultString = "default_string"
-const defaultNumberStr = "8080"
-const defaultNumber = 8080
+const (
+	defaultString    = "default_string"
+	defaultNumberStr = "8080"
+	defaultNumber    = 8080
+)
 
 func setGameConfigs() {
 	setEnvKeys(

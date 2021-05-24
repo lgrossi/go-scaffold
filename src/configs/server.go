@@ -6,12 +6,14 @@ import (
 	"golang.org/x/time/rate"
 )
 
-const EnvAppIpKey = "APP_IP"
-const EnvHttpPortKey = "APP_HTTP_PORT"
-const EnvGrpcPortKey = "APP_GRPC_PORT"
-
-const EnvRateLimiterBurstKey = "RATE_LIMITER_BURST"
-const EnvRateLimiterRateKey = "RATE_LIMITER_RATE"
+const (
+	EnvAppIpKey            = "APP_IP"
+	EnvGrpcPortKey         = "APP_GRPC_PORT"
+	EnvHttpPortKey         = "APP_HTTP_PORT"
+	EnvLogLevel            = "ENV_LOG_LEVEL"
+	EnvRateLimiterBurstKey = "RATE_LIMITER_BURST"
+	EnvRateLimiterRateKey  = "RATE_LIMITER_RATE"
+)
 
 type ServerConfigs struct {
 	Http        HttpConfigs
@@ -95,8 +97,6 @@ func GetRateLimiterConfigs() RateLimiter {
 		Rate:  rate.Limit(GetEnvInt(EnvRateLimiterRateKey, 2)),
 	}
 }
-
-const EnvLogLevel = "ENV_LOG_LEVEL"
 
 func GetLogLevel() logrus.Level {
 	defaultLevel, _ := logrus.Level.MarshalText(logrus.InfoLevel)

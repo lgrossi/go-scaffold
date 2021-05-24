@@ -6,7 +6,9 @@ import (
 	"github.com/lgrossi/go-scaffold/src/logger"
 )
 
-const DefaultMaxDbOpenConns = 100
+const (
+	DefaultMaxDbOpenConns = 100
+)
 
 func PullConnection(gConfigs configs.GlobalConfigs) *sql.DB {
 	DB, err := sql.Open("mysql", gConfigs.DBConfigs.GetConnectionString())

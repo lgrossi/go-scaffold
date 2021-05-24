@@ -4,11 +4,13 @@ import (
 	"fmt"
 )
 
-const EnvDBHostKey = "MYSQL_HOST"
-const EnvDBNameKey = "MYSQL_DBNAME"
-const EnvDBPassKey = "MYSQL_PASS"
-const EnvDBPortKey = "MYSQL_PORT"
-const EnvDBUserKey = "MYSQL_USER"
+const (
+	EnvDBHostKey = "MYSQL_HOST"
+	EnvDBNameKey = "MYSQL_DBNAME"
+	EnvDBPassKey = "MYSQL_PASS"
+	EnvDBPortKey = "MYSQL_PORT"
+	EnvDBUserKey = "MYSQL_USER"
+)
 
 type DBConfigs struct {
 	Host string
