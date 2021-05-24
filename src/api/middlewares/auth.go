@@ -8,7 +8,6 @@ import (
 	"github.com/lgrossi/go-scaffold/src/database"
 	"github.com/lgrossi/go-scaffold/src/logger"
 	"net/http"
-	"strings"
 	"time"
 )
 
@@ -24,7 +23,7 @@ type TokenSession struct {
 	jwt.StandardClaims
 }
 
-func GenerateAccessToken(email string, refreshToken ...string) (string, error) {
+func GenerateAccessToken(db *sql.DB, c *gin.Context, email string, refreshToken ...string) *database.ActiveToken {
 	if len(refreshToken) < 1 {
 		refreshToken = []string{createRefreshToken(time.Now().Unix() + RefreshTokenExpiration)}
 	}
@@ -36,7 +35,20 @@ func GenerateAccessToken(email string, refreshToken ...string) (string, error) {
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, session)
-	return token.SignedString([]byte(TokenString))
+	tokenStr, err := token.SignedString([]byte(TokenString))
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		logger.Panic(err)
+	}
+
+	activeToken := database.ActiveToken{TokenStr: tokenStr, Email: email}
+	database.InsertActiveToken(db, activeToken)
+
+	c.SetSameSite(http.SameSiteNoneMode)
+	c.SetCookie("jwt", tokenStr, AccessTokenExpiration, "", "", true, true)
+
+	return &activeToken
 }
 
 func VerifyToken(db *sql.DB) gin.HandlerFunc {
@@ -64,15 +76,13 @@ func VerifyToken(db *sql.DB) gin.HandlerFunc {
 		if !token.Valid {
 			database.DeactivateToken(db, activeToken)
 
-			newTokenStr, err := refreshAccessToken(&session)
+			refreshedToken, err := refreshAccessToken(db, c, &session)
 			if err != nil {
 				c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
 				return
 			}
 
-			activeToken.TokenStr = newTokenStr
-			database.InsertActiveToken(db, activeToken)
-			c.SetCookie("jwt", newTokenStr, AccessTokenExpiration, "", "", false, true)
+			activeToken = *refreshedToken
 		}
 
 		c.Set("jwt", activeToken.TokenStr)
@@ -89,15 +99,15 @@ func parseToken(token *jwt.Token) (interface{}, error) {
 	return []byte(TokenString), nil
 }
 
-func refreshAccessToken(session *TokenSession) (string, error) {
+func refreshAccessToken(db *sql.DB, c *gin.Context, session *TokenSession) (*database.ActiveToken, error) {
 	refreshTokenStr := session.RefreshToken
 
 	_, err := jwt.Parse(refreshTokenStr, parseToken)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	return GenerateAccessToken(session.Email, refreshTokenStr)
+	return GenerateAccessToken(db, c, session.Email, refreshTokenStr), nil
 }
 
 func createRefreshToken(expiresAt int64) string {
@@ -112,11 +122,11 @@ func createRefreshToken(expiresAt int64) string {
 }
 
 func ExtractToken(c *gin.Context) string {
-	bearToken := c.GetHeader("Authorization")
-	//normally Authorization the_token_xxx
-	strArr := strings.Split(bearToken, " ")
-	if len(strArr) == 2 {
-		return strArr[1]
+	token, err := c.Cookie("jwt")
+
+	if err == nil {
+		return token
 	}
+
 	return ""
 }

@@ -19,18 +19,13 @@ func (_api *Api) login(c *gin.Context) {
 		logger.Panic(err)
 	}
 
-	database.Login(_api.DB, user)
-	token, err := middlewares.GenerateAccessToken(user.Email)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		logger.Panic(err)
+	if !database.Login(_api.DB, user) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Invalid credentials"})
+		return
 	}
 
-	activeToken := database.ActiveToken{TokenStr: token, Email: user.Email}
-	database.InsertActiveToken(_api.DB, activeToken)
-
-	c.SetCookie("jwt", token, middlewares.RefreshTokenExpiration, "", "", false, true)
-	c.JSON(http.StatusOK, gin.H{"status": "OK"})
+	middlewares.GenerateAccessToken(_api.DB, c, user.Email)
+	c.JSON(http.StatusOK, gin.H{"session": gin.H{"user": user}})
 }
 
 func (_api *Api) logout(c *gin.Context) {

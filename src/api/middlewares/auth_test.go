@@ -2,51 +2,16 @@ package middlewares
 
 import (
 	"database/sql"
+	"fmt"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"net/http"
+	"net/http/httptest"
 	"reflect"
 	"testing"
 	"time"
 )
-
-func TestCreateAccessToken(t *testing.T) {
-	type args struct {
-		email        string
-		refreshToken []string
-	}
-	tests := []struct {
-		name string
-		args args
-		want string
-	}{{
-		name: "Parse includes email in the session",
-		args: args{email: "a@a.com"},
-		want: "a@a.com",
-	}, {
-		name: "Parse uses refresh token from argument",
-		args: args{email: "a@a.com", refreshToken: []string{"aaa"}},
-		want: "a@a.com",
-	}}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := GenerateAccessToken(tt.args.email, tt.args.refreshToken...)
-
-			session := TokenSession{}
-			jwt.ParseWithClaims(got, &session, func(token *jwt.Token) (interface{}, error) {
-				return []byte(TokenString), nil
-			})
-
-			assert.Nil(t, err)
-			assert.Equal(t, tt.want, session.Email)
-			assert.NotEmpty(t, session.RefreshToken)
-			if len(tt.args.refreshToken) > 0 {
-				assert.Equal(t, tt.args.refreshToken[0], session.RefreshToken)
-			}
-		})
-	}
-}
 
 func TestVerifyToken(t *testing.T) {
 	type args struct {
@@ -97,29 +62,30 @@ func Test_createRefreshToken(t *testing.T) {
 }
 
 func Test_extractToken(t *testing.T) {
-	type args struct {
-		c *gin.Context
-	}
 	tests := []struct {
-		name string
-		args args
-		want string
+		name   string
+		cookie string
+		want   string
 	}{{
-		name: "Should parse valid token from header",
-		args: args{&gin.Context{Request: &http.Request{Header: map[string][]string{"Authorization": {"authorization token"}}}}},
-		want: "token",
+		name:   "Should parse valid token from cookie",
+		cookie: "jwt=my_auth_token",
+		want:   "my_auth_token",
 	}, {
-		name: "Should return empty string for empty header",
-		args: args{&gin.Context{Request: &http.Request{}}},
-		want: "",
-	}, {
-		name: "Should return empty for invalid header",
-		args: args{&gin.Context{Request: &http.Request{Header: map[string][]string{"Authorization": {"authorization my token"}}}}},
-		want: "",
+		name:   "Should return empty string for empty cookie",
+		cookie: "",
+		want:   "",
 	}}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assert.Equal(t, tt.want, ExtractToken(tt.args.c))
+			c, _ := gin.CreateTestContext(httptest.NewRecorder())
+			c.Request = &http.Request{}
+
+			if tt.cookie != "" {
+				c.Request.Header = http.Header{
+					"Cookie": {fmt.Sprintf("%s", tt.cookie)},
+				}
+			}
+			assert.Equal(t, tt.want, ExtractToken(c))
 		})
 	}
 }
@@ -153,58 +119,6 @@ func Test_parseToken(t *testing.T) {
 			}
 			assert.Nil(t, err)
 			assert.Equal(t, tt.want, got)
-		})
-	}
-}
-
-func Test_refreshAccessToken(t *testing.T) {
-	type args struct {
-		session *TokenSession
-	}
-	tests := []struct {
-		name    string
-		args    args
-		want    string
-		wantErr bool
-	}{{
-		name: "Invalid token returns error",
-		args: args{session: &TokenSession{
-			Email:        "a@a.com",
-			RefreshToken: "invalid",
-		}},
-		want:    "",
-		wantErr: true,
-	}, {
-		name: "Expired token returns error",
-		args: args{session: &TokenSession{
-			Email:        "a@a.com",
-			RefreshToken: createRefreshToken(time.Now().Unix() - 1),
-		}},
-		want:    "",
-		wantErr: true,
-	}, {
-		name: "Valid refresh token returns new access token",
-		args: args{session: &TokenSession{
-			Email:        "a@a.com",
-			RefreshToken: createRefreshToken(time.Now().Unix() + 10),
-		}},
-		want:    "a@a.com",
-		wantErr: false,
-	}}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := refreshAccessToken(tt.args.session)
-			if tt.wantErr {
-				assert.NotNil(t, err)
-				return
-			}
-			assert.Nil(t, err)
-
-			session := TokenSession{}
-			jwt.ParseWithClaims(got, &session, func(token *jwt.Token) (interface{}, error) {
-				return []byte(TokenString), nil
-			})
-			assert.Equal(t, tt.want, session.Email)
 		})
 	}
 }

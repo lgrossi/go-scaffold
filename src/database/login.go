@@ -14,7 +14,7 @@ type User struct {
 
 func Login(db *sql.DB, user *User) bool {
 	statement := fmt.Sprintf(
-		"SELECT count(*) FROM users WHERE email = '%s' and password = '%s'",
+		"SELECT id FROM users WHERE email = '%s' and password = '%s'",
 		user.Email,
 		user.Password,
 	)

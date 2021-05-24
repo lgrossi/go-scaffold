@@ -3,6 +3,7 @@ package api
 import (
 	"database/sql"
 	"errors"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/lgrossi/go-scaffold/src/api/limiter"
@@ -39,6 +40,11 @@ func (_api *Api) Initialize(gConfigs configs.GlobalConfigs) error {
 	_api.Router.Use(logger.LogRequest())
 	_api.Router.Use(gin.Recovery())
 	_api.Router.Use(ipLimiter.Limit())
+
+	config := cors.DefaultConfig()
+	config.AllowOrigins = []string{"http://localhost:8081"}
+	config.AllowCredentials = true
+	_api.Router.Use(cors.New(config))
 
 	_api.initializeRoutes()
 
