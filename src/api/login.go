@@ -20,12 +20,12 @@ func (_api *Api) login(c *gin.Context) {
 	}
 
 	if !database.Login(_api.DB, user) {
-		c.JSON(http.StatusForbidden, gin.H{"error": "Invalid credentials"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
 		return
 	}
 
 	middlewares.GenerateAccessToken(_api.DB, c, user.Email)
-	c.JSON(http.StatusOK, gin.H{"session": gin.H{"user": user}})
+	c.JSON(http.StatusCreated, gin.H{"session": gin.H{"user": user}})
 }
 
 func (_api *Api) logout(c *gin.Context) {

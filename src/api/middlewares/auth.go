@@ -46,7 +46,7 @@ func GenerateAccessToken(db *sql.DB, c *gin.Context, email string, refreshToken 
 	database.InsertActiveToken(db, activeToken)
 
 	c.SetSameSite(http.SameSiteNoneMode)
-	c.SetCookie("jwt", tokenStr, AccessTokenExpiration, "", "", true, true)
+	c.SetCookie("jwt", tokenStr, AccessTokenExpiration, "", "", true, false)
 
 	return &activeToken
 }

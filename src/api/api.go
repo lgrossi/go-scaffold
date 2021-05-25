@@ -42,7 +42,7 @@ func (_api *Api) Initialize(gConfigs configs.GlobalConfigs) error {
 	_api.Router.Use(ipLimiter.Limit())
 
 	config := cors.DefaultConfig()
-	config.AllowOrigins = []string{"http://localhost:8081"}
+	config.AllowOrigins = []string{"http://127.0.0.1:8080"}
 	config.AllowCredentials = true
 	_api.Router.Use(cors.New(config))
 
@@ -52,7 +52,7 @@ func (_api *Api) Initialize(gConfigs configs.GlobalConfigs) error {
 	/* Generate HTTP/GRPC reverse proxy */
 	_api.GrpcConnection, err = grpc.Dial(gConfigs.ServerConfigs.Grpc.Format(), grpc.WithInsecure())
 	if err != nil {
-		logger.Error(errors.New("Couldn't start GRPC reverse proxy."))
+		logger.Error(errors.New("couldn't start GRPC reverse proxy"))
 		return err
 	}
 
@@ -84,7 +84,7 @@ func (_api *Api) initializeRoutes() {
 	authorized.Use(middlewares.VerifyToken(_api.DB))
 	{
 		authorized.POST("/protected", _api.protectedExample)
-		authorized.POST("/logout", _api.logout)
+		authorized.GET("/logout", _api.logout)
 		authorized.POST("/grpc", _api.grpcExample)
 	}
 }
