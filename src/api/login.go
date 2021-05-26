@@ -13,14 +13,32 @@ import (
 )
 
 func (_api *Api) login(c *gin.Context) {
+	request := &database.AuthRequest{}
+	if err := c.ShouldBindJSON(request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		logger.Panic(err)
+	}
+
+	user := database.Login(_api.DB, request)
+	if user == nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
+		return
+	}
+
+	middlewares.GenerateTokens(c, user)
+	c.JSON(http.StatusCreated, gin.H{"session": gin.H{"user": user}})
+}
+
+func (_api *Api) register(c *gin.Context) {
 	user := &database.User{}
 	if err := c.ShouldBindJSON(user); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		logger.Panic(err)
 	}
 
-	if !database.Login(_api.DB, user) {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
+	user = database.CreateUser(_api.DB, user)
+	if user == nil {
+		c.JSON(http.StatusConflict, gin.H{"error": "This email is already in use."})
 		return
 	}
 
