@@ -6,7 +6,6 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/lgrossi/go-scaffold/src/api/limiter"
 	"github.com/lgrossi/go-scaffold/src/api/middlewares"
 	"github.com/lgrossi/go-scaffold/src/configs"
 	"github.com/lgrossi/go-scaffold/src/database"
@@ -27,8 +26,8 @@ type Api struct {
 func (_api *Api) Initialize(gConfigs configs.GlobalConfigs) error {
 	_api.DB = database.PullConnection(gConfigs)
 
-	ipLimiter := &limiter.IPRateLimiter{
-		Visitors: make(map[string]*limiter.Visitor),
+	ipLimiter := &middlewares.IPRateLimiter{
+		Visitors: make(map[string]*middlewares.Visitor),
 		Mu:       &sync.RWMutex{},
 	}
 
@@ -45,6 +44,7 @@ func (_api *Api) Initialize(gConfigs configs.GlobalConfigs) error {
 	config.AllowOrigins = []string{"http://127.0.0.1:8080"}
 	config.AllowCredentials = true
 	_api.Router.Use(cors.New(config))
+	_api.Router.HandleMethodNotAllowed = true
 
 	_api.initializeRoutes()
 
@@ -79,11 +79,12 @@ func (_api *Api) GetName() string {
 
 func (_api *Api) initializeRoutes() {
 	_api.Router.POST("/login", _api.login)
+	_api.Router.GET("/refresh", _api.refresh)
 
 	authorized := _api.Router.Group("/")
-	authorized.Use(middlewares.VerifyToken(_api.DB))
+	authorized.Use(middlewares.VerifyToken)
 	{
-		authorized.POST("/protected", _api.protectedExample)
+		authorized.GET("/protected", _api.protectedExample)
 		authorized.GET("/logout", _api.logout)
 		authorized.POST("/grpc", _api.grpcExample)
 	}

@@ -24,15 +24,17 @@ func (_api *Api) login(c *gin.Context) {
 		return
 	}
 
-	middlewares.GenerateAccessToken(_api.DB, c, user.Email)
+	middlewares.GenerateTokens(c, user)
 	c.JSON(http.StatusCreated, gin.H{"session": gin.H{"user": user}})
 }
 
-func (_api *Api) logout(c *gin.Context) {
-	session := getSession(c)
-	tokenStr, _ := c.Get("jwt")
+func (_api *Api) refresh(c *gin.Context) {
+	middlewares.RefreshToken(_api.DB, c)
+}
 
-	database.DeactivateToken(_api.DB, database.ActiveToken{TokenStr: tokenStr.(string), Email: session.Email})
+func (_api *Api) logout(c *gin.Context) {
+	c.SetCookie(middlewares.RefreshTokenCookieKey, "", -1, "", "", true, true)
+	c.SetCookie(middlewares.AccessTokenCookieKey, "", -1, "", "", true, true)
 
 	c.JSON(http.StatusOK, gin.H{"status": "OK"})
 }
