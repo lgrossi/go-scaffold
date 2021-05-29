@@ -1,10 +1,16 @@
 package database
 
 import (
+	"crypto/hmac"
 	"database/sql"
+	"encoding/hex"
 	"fmt"
 	"github.com/lgrossi/go-scaffold/src/logger"
-	"golang.org/x/crypto/bcrypt"
+	"golang.org/x/crypto/sha3"
+)
+
+const (
+	secret = "MY_FUCKING_GREAT_SECRET_YOLO"
 )
 
 type AuthRequest struct {
@@ -51,7 +57,9 @@ func Login(db *sql.DB, request *AuthRequest) *User {
 	)
 
 	err := db.QueryRow(statement).Scan(&user.ID, &user.Name, &user.Password)
-	if err != nil || !comparePasswords([]byte(user.Password), []byte(request.Password)) {
+	hexPass, _ := hex.DecodeString(user.Password)
+
+	if err != nil || !comparePasswords(hexPass, []byte(request.Password)) {
 		return nil
 	}
 
@@ -72,15 +80,14 @@ func GetUserById(db *sql.DB, userID int64) *User {
 }
 
 func hashAndSalt(pwd []byte) string {
-	hash, err := bcrypt.GenerateFromPassword(pwd, bcrypt.MinCost)
+	h := hmac.New(sha3.New512, []byte(secret))
+	h.Write(pwd)
 
-	if err != nil {
-		logger.Panic(err)
-	}
-
-	return string(hash)
+	return hex.EncodeToString(h.Sum(nil))
 }
 
 func comparePasswords(hashedPwd, plainPwd []byte) bool {
-	return bcrypt.CompareHashAndPassword(hashedPwd, plainPwd) == nil
+	h := hmac.New(sha3.New512, []byte(secret))
+	h.Write(plainPwd)
+	return hmac.Equal(h.Sum(nil), hashedPwd)
 }
