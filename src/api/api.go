@@ -79,6 +79,7 @@ func (_api *Api) GetName() string {
 
 func (_api *Api) initializeRoutes() {
 	_api.Router.POST("/login", _api.login)
+	_api.Router.POST("/reset", _api.resetPassword)
 	_api.Router.POST("/register", _api.register)
 	_api.Router.GET("/refresh", _api.refresh)
 

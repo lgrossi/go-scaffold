@@ -2,6 +2,7 @@ package database
 
 import (
 	"crypto/hmac"
+	"crypto/rand"
 	"database/sql"
 	"encoding/hex"
 	"fmt"
@@ -77,6 +78,35 @@ func GetUserById(db *sql.DB, userID int64) *User {
 	}
 
 	return &user
+}
+
+func ResetPassword(db *sql.DB, email string) string {
+	var chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890-"
+	password := make([]byte, 16)
+
+	_, err := rand.Read(password)
+	if err != nil {
+		logger.Panic(err)
+	}
+
+	for i := 0; i < 16; i++ {
+		password[i] = chars[int(password[i])%len(chars)]
+	}
+
+	statement := fmt.Sprintf(
+		"UPDATE users SET password = '%s' WHERE email = '%s'", hashAndSalt(password), email,
+	)
+
+	res, err := db.Exec(statement)
+	if err != nil {
+		logger.Panic(err)
+	}
+
+	if rows, _ := res.RowsAffected(); rows == 0 {
+		return ""
+	}
+
+	return string(password)
 }
 
 func hashAndSalt(pwd []byte) string {
