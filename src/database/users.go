@@ -24,6 +24,7 @@ type User struct {
 	Email    string `json:"email,omitempty"`
 	Name     string `json:"name,omitempty"`
 	Password string `json:"password,omitempty"`
+	Verified bool   `json:"verified"`
 }
 
 type ApiUser struct {
@@ -51,33 +52,36 @@ func CreateUser(db *sql.DB, user *User) *User {
 }
 
 func Login(db *sql.DB, request *AuthRequest) *User {
-	user := User{Email: request.Email}
-	statement := fmt.Sprintf(
-		"SELECT id, name, password FROM users WHERE email = '%s'",
-		user.Email,
-	)
+	user := GetUserByEmail(db, request.Email)
+	if user == nil {
+		return nil
+	}
 
-	err := db.QueryRow(statement).Scan(&user.ID, &user.Name, &user.Password)
 	hexPass, _ := hex.DecodeString(user.Password)
 
-	if err != nil || !comparePasswords(hexPass, []byte(request.Password)) {
+	if !comparePasswords(hexPass, []byte(request.Password)) {
 		return nil
 	}
 
 	user.Password = ""
 
-	return &user
+	return user
 }
 
-func GetUserById(db *sql.DB, userID int64) *User {
-	statement := fmt.Sprintf("SELECT id, email, name FROM users WHERE id = '%d'", userID)
+func SetUserEmailAsVerified(db *sql.DB, email string) bool {
 
-	user := User{ID: userID}
-	if err := db.QueryRow(statement).Scan(&user.ID, &user.Email, &user.Name); err != nil {
-		return nil
+	statement := fmt.Sprintf(
+		"UPDATE users SET verified = 1 WHERE email = '%s'", email,
+	)
+
+	res, err := db.Exec(statement)
+	if err != nil {
+		logger.Panic(err)
 	}
 
-	return &user
+	rows, _ := res.RowsAffected()
+
+	return rows != 0
 }
 
 func ResetPassword(db *sql.DB, email string) string {
@@ -107,6 +111,33 @@ func ResetPassword(db *sql.DB, email string) string {
 	}
 
 	return string(password)
+}
+
+func GetUserById(db *sql.DB, userID int64) *User {
+	statement := fmt.Sprintf("SELECT email, name, verified FROM users WHERE id = '%d'", userID)
+
+	user := User{ID: userID}
+	if err := db.QueryRow(statement).Scan(&user.Email, &user.Name, &user.Verified); err != nil {
+		return nil
+	}
+
+	return &user
+}
+
+func GetUserByEmail(db *sql.DB, email string) *User {
+	user := User{Email: email}
+	statement := fmt.Sprintf(
+		"SELECT id, name, password, verified FROM users WHERE email = '%s'",
+		user.Email,
+	)
+
+	err := db.QueryRow(statement).Scan(&user.ID, &user.Name, &user.Password, &user.Verified)
+
+	if err != nil {
+		return nil
+	}
+
+	return &user
 }
 
 func hashAndSalt(pwd []byte) string {

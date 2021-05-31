@@ -2,6 +2,8 @@ package middlewares
 
 import (
 	"database/sql"
+	"encoding/base32"
+	"errors"
 	"fmt"
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
@@ -12,11 +14,12 @@ import (
 )
 
 const (
-	TokenString           = "MY_CUSTOM_SIGNED_STRING"
-	AccessTokenCookieKey  = "JWT_ACCESS_TOKEN"
-	RefreshTokenCookieKey = "JWT_REFRESH_TOKEN"
-	AccessTokenLifetime   = 15 * 60
-	RefreshTokenLifetime  = 7 * 24 * 60 * 60
+	TokenString               = "MY_CUSTOM_SIGNED_STRING"
+	AccessTokenCookieKey      = "JWT_ACCESS_TOKEN"
+	RefreshTokenCookieKey     = "JWT_REFRESH_TOKEN"
+	AccessTokenLifetime       = 15 * 60
+	RefreshTokenLifetime      = 7 * 24 * 60 * 60
+	VerificationTokenLifetime = 1 * 60 * 60
 )
 
 type TokenSession struct {
@@ -25,18 +28,38 @@ type TokenSession struct {
 	jwt.StandardClaims
 }
 
-func VerifyToken(c *gin.Context) {
+func VerifyTokenHandler(db *sql.DB) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		user, err := VerifyToken(db, extractToken(c, AccessTokenCookieKey))
+
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+			return
+		}
+
+		if user == nil {
+			c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "User not found"})
+			return
+		}
+
+		c.Set("user", user)
+	}
+}
+
+func VerifyToken(db *sql.DB, signedToken string) (*database.User, error) {
 	session := TokenSession{}
-	signedToken := extractToken(c, AccessTokenCookieKey)
 	token, _ := jwt.ParseWithClaims(signedToken, &session, parseToken)
 
 	if token == nil || !token.Valid {
-		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid access token"})
-		return
+		return nil, errors.New("invalid access token")
 	}
 
-	c.Set("session", &session)
-	c.Next()
+	user := database.GetUserByEmail(db, session.Email)
+	if user == nil {
+		return nil, nil
+	}
+
+	return user, nil
 }
 
 func RefreshToken(db *sql.DB, c *gin.Context) {
@@ -64,6 +87,19 @@ func GenerateTokens(c *gin.Context, user *database.User) []string {
 		generateAccessToken(c, user, AccessTokenLifetime),
 		generateRefreshToken(c, user, RefreshTokenLifetime),
 	}
+}
+
+func GenerateEmailVerificationLink(email string) string {
+	signedToken := signToken(
+		TokenSession{
+			Email:          email,
+			StandardClaims: jwt.StandardClaims{ExpiresAt: time.Now().Unix() + VerificationTokenLifetime},
+		},
+	)
+
+	encoded := base32.StdEncoding.EncodeToString([]byte(signedToken))
+
+	return fmt.Sprintf("%s%s", "http://127.0.0.1:80/user/verification/", encoded)
 }
 
 func generateAccessToken(c *gin.Context, user *database.User, lifetime int) string {
