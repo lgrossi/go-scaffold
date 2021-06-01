@@ -16,13 +16,13 @@ import (
 )
 
 func (_api *Api) register(c *gin.Context) {
-	user := &database.User{}
-	if err := c.ShouldBindJSON(user); err != nil {
+	request := &database.RegisterRequest{}
+	if err := c.ShouldBindJSON(request); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		logger.Panic(err)
 	}
 
-	user = database.CreateUser(_api.DB, user)
+	user := database.CreateUser(_api.DB, request)
 	if user == nil {
 		c.JSON(http.StatusConflict, gin.H{"error": "This email is already in use."})
 		return
@@ -85,7 +85,7 @@ func (_api *Api) resetPassword(c *gin.Context) {
 }
 
 func (_api *Api) login(c *gin.Context) {
-	request := &database.AuthRequest{}
+	request := &database.LoginRequest{}
 	if err := c.ShouldBindJSON(request); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		logger.Panic(err)

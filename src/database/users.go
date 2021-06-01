@@ -14,9 +14,14 @@ const (
 	secret = "MY_FUCKING_GREAT_SECRET_YOLO"
 )
 
-type AuthRequest struct {
+type LoginRequest struct {
 	Email    string
 	Password string
+}
+
+type RegisterRequest struct {
+	Name string
+	LoginRequest
 }
 
 type User struct {
@@ -32,12 +37,12 @@ type ApiUser struct {
 	Name  string
 }
 
-func CreateUser(db *sql.DB, user *User) *User {
+func CreateUser(db *sql.DB, request *RegisterRequest) *User {
 	statement := fmt.Sprintf(
 		"INSERT INTO users(email, password, name) VALUES ('%s', '%s', '%s')",
-		user.Email,
-		hashAndSalt([]byte(user.Password)),
-		user.Name,
+		request.Email,
+		hashAndSalt([]byte(request.Password)),
+		request.Name,
 	)
 
 	res, err := db.Exec(statement)
@@ -51,7 +56,7 @@ func CreateUser(db *sql.DB, user *User) *User {
 	return GetUserById(db, id)
 }
 
-func Login(db *sql.DB, request *AuthRequest) *User {
+func Login(db *sql.DB, request *LoginRequest) *User {
 	user := GetUserByEmail(db, request.Email)
 	if user == nil {
 		return nil

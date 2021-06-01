@@ -41,7 +41,7 @@ func (_api *Api) Initialize(gConfigs configs.GlobalConfigs) error {
 	_api.Router.Use(ipLimiter.Limit())
 
 	config := cors.DefaultConfig()
-	config.AllowOrigins = []string{"http://127.0.0.1:8080"}
+	config.AllowOrigins = []string{"http://127.0.0.1:3000", "http://localhost:3000"}
 	config.AllowCredentials = true
 	_api.Router.Use(cors.New(config))
 	_api.Router.HandleMethodNotAllowed = true
