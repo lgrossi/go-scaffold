@@ -34,7 +34,7 @@ func (_api *Api) register(c *gin.Context) {
 		fmt.Sprintf(
 			`Hello %s,<br><br>Thank you for registrate with us<br>Please click <a href="%s">here</a> to validate your email.`,
 			user.Name,
-			middlewares.GenerateEmailVerificationLink(user),
+			middlewares.GenerateEmailVerificationURL(user),
 		),
 	)
 
@@ -55,7 +55,7 @@ func (_api *Api) verifyEmail(c *gin.Context) {
 	}
 
 	if !database.SetUserEmailAsVerified(_api.DB, user.Email) {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Verification failed, email is already verified or invalid"})
+		c.JSON(http.StatusAlreadyReported, gin.H{"status": "Already verified"})
 		return
 	}
 
@@ -106,13 +106,8 @@ func (_api *Api) refresh(c *gin.Context) {
 	manager := security.ExtractToken(c, middlewares.RefreshTokenCookieKey)
 	user := manager.VerifyToken(_api.DB)
 
-	if manager.Error != nil {
+	if manager.Error != nil || user == nil {
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid refresh token"})
-		return
-	}
-
-	if user == nil {
-		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "User not found"})
 		return
 	}
 

@@ -60,9 +60,9 @@ func (manager *TokenManager) SetTokenToContext(c *gin.Context, key string) *Toke
 	return manager
 }
 
-func (manager *TokenManager) GenerateVerificationLink() string {
+func (manager *TokenManager) GenerateVerificationURL() string {
 	encoded := base32.StdEncoding.EncodeToString([]byte(manager.Signed))
-	return fmt.Sprintf("%s%s", "http://127.0.0.1:80/user/verification/", encoded)
+	return fmt.Sprintf("%s%s", "http://localhost:3000/verify/", encoded)
 }
 
 func (manager *TokenManager) VerifyToken(db *sql.DB) *database.User {

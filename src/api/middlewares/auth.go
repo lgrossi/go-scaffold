@@ -28,13 +28,8 @@ func VerifyTokenHandler(db *sql.DB) gin.HandlerFunc {
 		manager := security.ExtractToken(c, AccessTokenCookieKey)
 		user := manager.VerifyToken(db)
 
-		if manager.Error != nil {
+		if manager.Error != nil || user == nil {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid access token"})
-			return
-		}
-
-		if user == nil {
-			c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "User not found"})
 			return
 		}
 
@@ -42,8 +37,8 @@ func VerifyTokenHandler(db *sql.DB) gin.HandlerFunc {
 	}
 }
 
-func GenerateEmailVerificationLink(user *database.User) string {
-	return security.InitToken(user, VerificationTokenLifetime).Sign().GenerateVerificationLink()
+func GenerateEmailVerificationURL(user *database.User) string {
+	return security.InitToken(user, VerificationTokenLifetime).Sign().GenerateVerificationURL()
 }
 
 func GenerateAccessToken(c *gin.Context, user *database.User, lifetime ...int64) *security.TokenManager {
