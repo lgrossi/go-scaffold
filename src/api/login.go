@@ -11,6 +11,7 @@ import (
 	"github.com/lgrossi/go-scaffold/src/database"
 	exampleProtoMessages "github.com/lgrossi/go-scaffold/src/grpc/example_proto_defs"
 	"github.com/lgrossi/go-scaffold/src/logger"
+	"github.com/lgrossi/go-scaffold/src/security"
 	"net/http"
 )
 
@@ -33,18 +34,22 @@ func (_api *Api) register(c *gin.Context) {
 		fmt.Sprintf(
 			`Hello %s,<br><br>Thank you for registrate with us<br>Please click <a href="%s">here</a> to validate your email.`,
 			user.Name,
-			middlewares.GenerateEmailVerificationLink(user.Email),
+			middlewares.GenerateEmailVerificationLink(user),
 		),
 	)
 
-	middlewares.GenerateTokens(c, user)
+	middlewares.GenerateAccessToken(c, user)
+	middlewares.GenerateRefreshToken(c, user)
 	c.JSON(http.StatusCreated, gin.H{"session": gin.H{"user": user}})
 }
 
 func (_api *Api) verifyEmail(c *gin.Context) {
 	decoded, _ := base32.StdEncoding.DecodeString(c.Param("token"))
-	user, err := middlewares.VerifyToken(_api.DB, string(decoded))
-	if user == nil || err != nil {
+
+	manager := security.TokenManager{Signed: string(decoded)}
+	user := manager.VerifyToken(_api.DB)
+
+	if user == nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Verification expired"})
 		return
 	}
@@ -92,12 +97,27 @@ func (_api *Api) login(c *gin.Context) {
 		return
 	}
 
-	middlewares.GenerateTokens(c, user)
+	middlewares.GenerateAccessToken(c, user)
+	middlewares.GenerateRefreshToken(c, user)
 	c.JSON(http.StatusCreated, gin.H{"session": gin.H{"user": user}})
 }
 
 func (_api *Api) refresh(c *gin.Context) {
-	middlewares.RefreshToken(_api.DB, c)
+	manager := security.ExtractToken(c, middlewares.RefreshTokenCookieKey)
+	user := manager.VerifyToken(_api.DB)
+
+	if manager.Error != nil {
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid refresh token"})
+		return
+	}
+
+	if user == nil {
+		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	}
+
+	middlewares.GenerateAccessToken(c, user)
+	c.JSON(http.StatusCreated, gin.H{"session": gin.H{"user": user}})
 }
 
 func (_api *Api) logout(c *gin.Context) {

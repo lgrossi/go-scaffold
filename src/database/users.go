@@ -23,7 +23,7 @@ type User struct {
 	ID       int64  `id:"password,omitempty"`
 	Email    string `json:"email,omitempty"`
 	Name     string `json:"name,omitempty"`
-	Password string `json:"password,omitempty"`
+	Password string `json:"-"`
 	Verified bool   `json:"verified"`
 }
 
@@ -62,8 +62,6 @@ func Login(db *sql.DB, request *AuthRequest) *User {
 	if !comparePasswords(hexPass, []byte(request.Password)) {
 		return nil
 	}
-
-	user.Password = ""
 
 	return user
 }
